@@ -38,12 +38,8 @@ exports.handler = async function(event, context) {
     const data = JSON.parse(event.body);
     const { name, email, course, price } = data;
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-if (!name || !email || !emailRegex.test(email)) {
-  alert("Please enter a valid name and email address before proceeding.");
-  return;
-}
+    if (!name || !email || !course || !price) {
+      return {
         statusCode: 400,
         headers: {
           "Access-Control-Allow-Origin": "*",
