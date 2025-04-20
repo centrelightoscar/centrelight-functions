@@ -1,41 +1,59 @@
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-// Test update to force Git to detect change
-// Force GIT Update
-
-// Your Google Apps Script endpoint (for Google Sheets logging)
+// Google Apps Script endpoint for logging bookings
 const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt9BZSXMS1lYsA6rdu9sSIppuMxmhF6doONKj1cpPN8CCvRp4MJvpm3zAuzXQXL1ew/exec";
+// Public CSV URL for courses
+const COURSES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ33otXyqqAtf2FTy2n98hJBdLeNp41YL7ubyT56CKrqF0z92_sWeptkLFrliEdRwvZRQoFlfve34yj/pub?output=csv";
 
 exports.handler = async function(event, context) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Method Not Allowed" }),
-    {;
+      body: JSON.stringify({ error: "Method Not Allowed" })
+    };
+  }
 
   try {
     const data = JSON.parse(event.body);
-    const { name, email, course, price } = data;
+    const { name, email, course, location } = data;
 
-    if (!name || !email || !course) {
-  return {
-    statusCode: 400,
-    body: JSON.stringify({ error: "Missing booking details" })
-  {;
-
-    // Parse price from string to integer in pence
-    const unitAmount = Math.round(parseFloat(price) * 100);
-
-    if (isNaN(unitAmount) || unitAmount <= 0) {
-      throw new Error("Invalid price value.");
+    if (!name || !email || !course || !location) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing booking details" })
+      };
     }
+
+    // Fetch and parse CSV to get the price
+    const csvResponse = await fetch(COURSES_CSV_URL);
+    const csvText = await csvResponse.text();
+    const rows = csvText.trim().split("\n").slice(1); // Skip header
+    let matchedPrice = null;
+
+    for (const row of rows) {
+      const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, ""));
+      const [csvCourse, , , , csvLocation, csvPrice] = columns;
+      if (csvCourse === course && csvLocation === location) {
+        matchedPrice = csvPrice;
+        break;
+      }
+    }
+
+    if (!matchedPrice) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Course price not found." })
+      };
+    }
+
+    const unitAmount = Math.round(parseFloat(matchedPrice) * 100);
 
     // Store booking in Google Sheet
     await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, course, price })
+      body: JSON.stringify({ name, email, course, location, price: matchedPrice })
     });
 
     // Create Stripe Checkout Session
@@ -59,14 +77,14 @@ exports.handler = async function(event, context) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ url: session.url }),
+      body: JSON.stringify({ url: session.url })
     };
 
   } catch (err) {
     console.error("Checkout Error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Something went wrong." }),
+      body: JSON.stringify({ error: "Something went wrong." })
     };
   }
 };
