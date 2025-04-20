@@ -4,9 +4,12 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 // Your Google Apps Script endpoint (from the web app you deployed)
 const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt9BZSXMS1lYsA6rdu9sSIppuMxmhF6doONKj1cpPN8CCvRp4MJvpm3zAuzXQXL1ew/exec";
 
-exports.handler = async function(event) {
+exports.handler = async function(event, context) {
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method Not Allowed" }),
+    };
   }
 
   try {
