@@ -22,6 +22,7 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ error: "Missing booking details" })
       };
     }
+console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
 
     const unitAmount = Math.round(parseFloat(price) * 100);
     if (isNaN(unitAmount) || unitAmount <= 0) {
@@ -29,11 +30,11 @@ exports.handler = async function(event, context) {
     }
 
     // Log to Google Sheet
-    await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, course, price })
-    });
+    //await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+      //method: "POST",
+      //headers: { "Content-Type": "application/json" },
+     // body: JSON.stringify({ name, email, course, price })
+    // });
 
     // Create Stripe session
     const session = await stripe.checkout.sessions.create({
