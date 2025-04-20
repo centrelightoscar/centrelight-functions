@@ -1,7 +1,10 @@
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-// Your Google Apps Script endpoint (from the web app you deployed)
+// Test update to force Git to detect change
+// Force GIT Update
+
+// Your Google Apps Script endpoint (for Google Sheets logging)
 const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt9BZSXMS1lYsA6rdu9sSIppuMxmhF6doONKj1cpPN8CCvRp4MJvpm3zAuzXQXL1ew/exec";
 
 exports.handler = async function(event, context) {
@@ -14,16 +17,23 @@ exports.handler = async function(event, context) {
 
   try {
     const data = JSON.parse(event.body);
-    const { name, email, course } = data;
+    const { name, email, course, price } = data;
 
-    // STEP 1: Store booking in Google Sheet
+    // Parse price from string to integer in pence
+    const unitAmount = Math.round(parseFloat(price) * 100);
+
+    if (isNaN(unitAmount) || unitAmount <= 0) {
+      throw new Error("Invalid price value.");
+    }
+
+    // Store booking in Google Sheet
     await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, course })
+      body: JSON.stringify({ name, email, course, price })
     });
 
-    // STEP 2: Create Stripe Checkout Session
+    // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -33,7 +43,7 @@ exports.handler = async function(event, context) {
           price_data: {
             currency: "gbp",
             product_data: { name: course },
-            unit_amount: 26000 // £260 in pence (adjust as needed)
+            unit_amount: unitAmount
           },
           quantity: 1,
         },
@@ -44,7 +54,7 @@ exports.handler = async function(event, context) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ id: session.id }),
+      body: JSON.stringify({ url: session.url }),
     };
 
   } catch (err) {
