@@ -7,6 +7,10 @@ const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt
 const COURSES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ33otXyqqAtf2FTy2n98hJBdLeNp41YL7ubyT56CKrqF0z92_sWeptkLFrliEdRwvZRQoFlfve34yj/pub?output=csv";
 
 exports.handler = async function(event, context) {
+  console.log("=== Received Booking Request ===");
+  console.log("Method:", event.httpMethod);
+  console.log("Headers:", event.headers);
+  console.log("Body:", event.body);
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
