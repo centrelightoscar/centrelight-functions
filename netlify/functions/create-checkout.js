@@ -1,14 +1,12 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt9BZSXMS1lYsA6rdu9sSIppuMxmhF6doONKj1cpPN8CCvRp4MJvpm3zAuzXQXL1ew/exec";
+const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwlSN-UrsjrwR4xiYCzEjTCRlYJMNivGPzW0tI9nW0N54ajulMnDnc_D5PutIv6SFonCA/exec";
 
 exports.handler = async function(event, context) {
   console.log("🔁 HTTP Method:", event.httpMethod);
   console.log("📦 Incoming Data:", event.body);
   console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
 
-  // ✅ Handle CORS preflight requests
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -21,7 +19,6 @@ exports.handler = async function(event, context) {
     };
   }
 
-  // ✅ Handle invalid methods
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -55,13 +52,6 @@ exports.handler = async function(event, context) {
       throw new Error("Invalid price value.");
     }
 
-    // Optional: log to Google Sheets
-    await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, course, price })
-    });
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -80,6 +70,13 @@ exports.handler = async function(event, context) {
       cancel_url: "https://centrelightstudios.co.uk/booking-cancelled",
     });
 
+    // Log to Google Sheets
+    await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, course, price })
+    });
+
     return {
       statusCode: 200,
       headers: {
@@ -91,9 +88,7 @@ exports.handler = async function(event, context) {
     };
 
   } catch (err) {
-    console.error("Checkout Error:", err.message);
-    console.error("Stack Trace:", err.stack);
-
+    console.error("Checkout Error:", err);
     return {
       statusCode: 500,
       headers: {
@@ -101,8 +96,7 @@ exports.handler = async function(event, context) {
         "Access-Control-Allow-Headers": "Content-Type",
         "Access-Control-Allow-Methods": "POST, OPTIONS"
       },
-      body: JSON.stringify({ error: err.message || "Something went wrong." }),
+      body: JSON.stringify({ error: "Something went wrong." }),
     };
   }
-
 };
