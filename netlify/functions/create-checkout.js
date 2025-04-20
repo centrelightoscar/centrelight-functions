@@ -33,11 +33,11 @@ exports.handler = async function(event, context) {
     }
 
     // Log to Google Sheet (optional)
-    // await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ name, email, course, price })
-    // });
+    await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, course, price })
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -53,12 +53,17 @@ exports.handler = async function(event, context) {
           quantity: 1,
         },
       ],
-      success_url: "https://centrelightstudios.co.uk/booking-success",
-      cancel_url: "https://centrelightstudios.co.uk/booking-cancelled",
+      success_url: `${process.env.BASE_URL || "https://centrelightstudios.co.uk"}/booking-success`,
+      cancel_url: `${process.env.BASE_URL || "https://centrelightstudios.co.uk"}/booking-cancelled`,
     });
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      },
       body: JSON.stringify({ url: session.url }),
     };
 
@@ -66,6 +71,11 @@ exports.handler = async function(event, context) {
     console.error("Checkout Error:", err);
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      },
       body: JSON.stringify({ error: "Something went wrong." }),
     };
   }
