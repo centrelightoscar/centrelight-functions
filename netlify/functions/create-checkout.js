@@ -1,10 +1,14 @@
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-// Google Apps Script Web App URL
+// Your Google Apps Script endpoint (for Google Sheets logging)
 const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt9BZSXMS1lYsA6rdu9sSIppuMxmhF6doONKj1cpPN8CCvRp4MJvpm3zAuzXQXL1ew/exec";
 
 exports.handler = async function(event, context) {
+  console.log("🔁 HTTP Method:", event.httpMethod);
+  console.log("📦 Incoming Data:", event.body);
+  console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -22,25 +26,19 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ error: "Missing booking details" })
       };
     }
-exports.handler = async function(event, context) {
-  console.log("🔁 HTTP Method:", event.httpMethod);
-  console.log("📦 Incoming Data:", event.body);
-
-console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
 
     const unitAmount = Math.round(parseFloat(price) * 100);
     if (isNaN(unitAmount) || unitAmount <= 0) {
       throw new Error("Invalid price value.");
     }
 
-    // Log to Google Sheet
-    //await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
-      //method: "POST",
-      //headers: { "Content-Type": "application/json" },
-     // body: JSON.stringify({ name, email, course, price })
+    // Log to Google Sheet (optional)
+    // await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ name, email, course, price })
     // });
 
-    // Create Stripe session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
