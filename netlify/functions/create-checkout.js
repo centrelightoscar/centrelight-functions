@@ -22,6 +22,10 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ error: "Missing booking details" })
       };
     }
+exports.handler = async function(event, context) {
+  console.log("🔁 HTTP Method:", event.httpMethod);
+  console.log("📦 Incoming Data:", event.body);
+
 console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
 
     const unitAmount = Math.round(parseFloat(price) * 100);
