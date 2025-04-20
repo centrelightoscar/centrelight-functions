@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // Your Google Apps Script endpoint (from the web app you deployed)
