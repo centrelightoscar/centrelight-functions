@@ -19,6 +19,12 @@ exports.handler = async function(event, context) {
     const data = JSON.parse(event.body);
     const { name, email, course, price } = data;
 
+    if (!name || !email || !course) {
+  return {
+    statusCode: 400,
+    body: JSON.stringify({ error: "Missing booking details" })
+  {;
+
     // Parse price from string to integer in pence
     const unitAmount = Math.round(parseFloat(price) * 100);
 
