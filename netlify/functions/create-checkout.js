@@ -1,5 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
+// ✅ Your deployed Google Apps Script Web App URL
 const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwlSN-UrsjrwR4xiYCzEjTCRlYJMNivGPzW0tI9nW0N54ajulMnDnc_D5PutIv6SFonCA/exec";
 
 exports.handler = async function(event, context) {
@@ -70,12 +71,19 @@ exports.handler = async function(event, context) {
       cancel_url: "https://centrelightstudios.co.uk/booking-cancelled",
     });
 
-    // Log to Google Sheets
-    await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, course, price })
-    });
+    // ✅ Log booking info to Google Sheets from the server
+    try {
+      const logRes = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, course, price })
+      });
+
+      const logText = await logRes.text();
+      console.log("📝 Google Sheets log result:", logText);
+    } catch (logErr) {
+      console.error("❌ Failed to log booking to Google Sheets:", logErr);
+    }
 
     return {
       statusCode: 200,
@@ -88,7 +96,7 @@ exports.handler = async function(event, context) {
     };
 
   } catch (err) {
-    console.error("Checkout Error:", err);
+    console.error("❌ Checkout Error:", err);
     return {
       statusCode: 500,
       headers: {
