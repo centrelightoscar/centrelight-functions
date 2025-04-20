@@ -91,7 +91,9 @@ exports.handler = async function(event, context) {
     };
 
   } catch (err) {
-    console.error("Checkout Error:", err);
+    console.error("Checkout Error:", err.message);
+    console.error("Stack Trace:", err.stack);
+
     return {
       statusCode: 500,
       headers: {
@@ -99,7 +101,8 @@ exports.handler = async function(event, context) {
         "Access-Control-Allow-Headers": "Content-Type",
         "Access-Control-Allow-Methods": "POST, OPTIONS"
       },
-      body: JSON.stringify({ error: "Something went wrong." }),
+      body: JSON.stringify({ error: err.message || "Something went wrong." }),
     };
   }
+
 };
