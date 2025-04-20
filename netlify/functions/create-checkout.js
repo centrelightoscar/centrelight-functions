@@ -1,12 +1,6 @@
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-exports.handler = async function(event, context) {
-  console.log("🔁 HTTP Method:", event.httpMethod);
-  console.log("📦 Incoming Data:", event.body);
-  console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
-
-// Your Google Apps Script endpoint (for Google Sheets logging)
 const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4Nt9BZSXMS1lYsA6rdu9sSIppuMxmhF6doONKj1cpPN8CCvRp4MJvpm3zAuzXQXL1ew/exec";
 
 exports.handler = async function(event, context) {
@@ -14,9 +8,28 @@ exports.handler = async function(event, context) {
   console.log("📦 Incoming Data:", event.body);
   console.log("🔐 STRIPE KEY STARTS WITH:", process.env.STRIPE_SECRET_KEY?.slice(0, 10));
 
+  // ✅ Handle CORS preflight requests
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      },
+      body: "OK"
+    };
+  }
+
+  // ✅ Handle invalid methods
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      },
       body: JSON.stringify({ error: "Method Not Allowed" }),
     };
   }
@@ -28,6 +41,11 @@ exports.handler = async function(event, context) {
     if (!name || !email || !course || !price) {
       return {
         statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "POST, OPTIONS"
+        },
         body: JSON.stringify({ error: "Missing booking details" })
       };
     }
@@ -37,7 +55,7 @@ exports.handler = async function(event, context) {
       throw new Error("Invalid price value.");
     }
 
-    // Log to Google Sheet (optional)
+    // Optional: log to Google Sheets
     await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,8 +76,8 @@ exports.handler = async function(event, context) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.BASE_URL || "https://centrelightstudios.co.uk"}/booking-success`,
-      cancel_url: `${process.env.BASE_URL || "https://centrelightstudios.co.uk"}/booking-cancelled`,
+      success_url: "https://centrelightstudios.co.uk/booking-success",
+      cancel_url: "https://centrelightstudios.co.uk/booking-cancelled",
     });
 
     return {
