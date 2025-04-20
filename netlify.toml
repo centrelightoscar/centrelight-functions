@@ -1,5 +1,6 @@
-[functions]
-  directory = "netlify/functions"
+[build]
+  functions = "netlify/functions"
+  publish = "dist"
 
 [[redirects]]
   from = "/.netlify/functions/*"
